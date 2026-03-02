@@ -3,9 +3,6 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-# Add project root to Python path (works even if PYTHONPATH is unset)
-export PYTHONPATH="${SCRIPT_DIR}/..:${PYTHONPATH:-}"
-
 HOST="${HOST:-0.0.0.0}"
 PORT="${PORT:-8000}"
 RELOAD="${RELOAD:-true}"
@@ -19,10 +16,12 @@ echo "   Reload: ${RELOAD}"
 echo "   Graceful shutdown timeout: ${TIMEOUT_GRACEFUL_SHUTDOWN}s"
 echo "   Log config: ${LOG_CONFIG}"
 
+# Activate venv
 source "${SCRIPT_DIR}/.venv/bin/activate"
 
+# Run uvicorn with PYTHONPATH set to project root
 CMD=(
-  uvicorn "${APP_MODULE}"
+  env PYTHONPATH="${SCRIPT_DIR}/.." uvicorn "${APP_MODULE}"
   --host "${HOST}"
   --port "${PORT}"
   --timeout-graceful-shutdown "${TIMEOUT_GRACEFUL_SHUTDOWN}"

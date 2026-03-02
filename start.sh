@@ -3,6 +3,9 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
+# Add project root to Python path (subprocesses inherit this)
+export PYTHONPATH="${SCRIPT_DIR}/..:${PYTHONPATH:-}"
+
 HOST="${HOST:-0.0.0.0}"
 PORT="${PORT:-8000}"
 RELOAD="${RELOAD:-true}"
@@ -16,20 +19,25 @@ echo "   Reload: ${RELOAD}"
 echo "   Graceful shutdown timeout: ${TIMEOUT_GRACEFUL_SHUTDOWN}s"
 echo "   Log config: ${LOG_CONFIG}"
 
-# Activate venv
-source "${SCRIPT_DIR}/.venv/bin/activate"
+# Activate virtual environment
+if [[ -f "${SCRIPT_DIR}/.venv/bin/activate" ]]; then
+    source "${SCRIPT_DIR}/.venv/bin/activate"
+else
+    echo "❌ Virtual environment not found at ${SCRIPT_DIR}/.venv"
+    exit 1
+fi
 
-# Run uvicorn with PYTHONPATH set to project root
+# Run uvicorn
 CMD=(
-  env PYTHONPATH="${SCRIPT_DIR}/.." uvicorn "${APP_MODULE}"
-  --host "${HOST}"
-  --port "${PORT}"
-  --timeout-graceful-shutdown "${TIMEOUT_GRACEFUL_SHUTDOWN}"
-  --log-config "${LOG_CONFIG}"
+    uvicorn "${APP_MODULE}"
+    --host "${HOST}"
+    --port "${PORT}"
+    --timeout-graceful-shutdown "${TIMEOUT_GRACEFUL_SHUTDOWN}"
+    --log-config "${LOG_CONFIG}"
 )
 
 if [[ "${RELOAD}" == "true" ]]; then
-  CMD+=(--reload)
+    CMD+=(--reload)
 fi
 
 exec "${CMD[@]}"

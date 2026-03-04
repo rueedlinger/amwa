@@ -12,7 +12,9 @@
       <tbody>
         <!-- Speed Wheel -->
         <tr class="hover:bg-gray-50 transition">
-          <td class="px-2 py-1 border-b border-dashed border-black/30 text-left">Speed Wheel Circumference (m)</td>
+          <td class="px-2 py-1 border-b border-dashed border-black/30 text-left">
+            Speed Wheel Circumference (m)
+          </td>
           <td class="px-2 py-1 border-b border-dashed border-black/30">
             <input
               v-model.number="localSettings.speed_wheel_circumference_m"
@@ -28,7 +30,9 @@
 
         <!-- Distance Wheel -->
         <tr class="hover:bg-gray-50 transition">
-          <td class="px-2 py-1 border-b border-dashed border-black/30 text-left">Distance Wheel Circumference (m)</td>
+          <td class="px-2 py-1 border-b border-dashed border-black/30 text-left">
+            Distance Wheel Circumference (m)
+          </td>
           <td class="px-2 py-1 border-b border-dashed border-black/30">
             <input
               v-model.number="localSettings.distance_wheel_circumference_m"
@@ -123,10 +127,18 @@ async function submitSettings() {
     });
     const res = await axios.post(API.baseUrl + API.endpoints.updateSettings, payload);
     Object.assign(localSettings, res.data ?? payload);
-    emit('show-toast', { message: 'Settings updated successfully!', title: 'Settings', type: ToastType.SUCCESS });
+    emit('show-toast', {
+      message: 'Settings updated successfully!',
+      title: 'Settings',
+      type: ToastType.SUCCESS,
+    });
   } catch (err) {
     emit('show-toast', {
-      message: err.response?.data?.detail || err.response?.data?.message || err.message || 'Failed to update settings',
+      message:
+        err.response?.data?.detail ||
+        err.response?.data?.message ||
+        err.message ||
+        'Failed to update settings',
       title: 'Error',
       type: ToastType.ERROR,
     });

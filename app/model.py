@@ -5,10 +5,6 @@ from typing import Optional
 from pydantic import BaseModel, Field
 
 
-from enum import Enum
-from typing import Optional
-
-
 class SportZone(str, Enum):
     """Defines sport zones based on heart rate percentage of HRmax.
     https://www.polar.com/en/guide/heart-rate-zones

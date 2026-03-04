@@ -98,7 +98,10 @@
         class="bg-gradient-to-r from-purple-500 to-blue-400 text-white px-4 py-2 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 flex items-center gap-2 disabled:opacity-50"
         @click="submitWorkout"
       >
-        <div v-if="loading" class="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+        <div
+          v-if="loading"
+          class="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"
+        ></div>
         <span>{{ loading ? 'Saving...' : 'Save Workout' }}</span>
       </button>
     </div>

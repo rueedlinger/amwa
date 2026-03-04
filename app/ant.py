@@ -24,7 +24,6 @@ from app.util import CumulativeSumMap, MetricsKey, TimedMap, TimedMovingAverage
 class Metrics:
     def __init__(
         self,
-        filter_device_ids: List[int] = [],
         metrics_settings: MetricsSettingsModel = MetricsSettingsModel(),
     ):
         self.logger = logging.getLogger("app.metrics")
@@ -38,7 +37,7 @@ class Metrics:
             self.metrics_settings: MetricsSettingsModel = MetricsSettingsModel()
         else:
             self.metrics_settings = metrics_settings
-        self.filter_device_ids = self.set_filter_device_ids(filter_device_ids)
+
         self._reset_metrics()
         self.is_running = False
 
@@ -54,22 +53,6 @@ class Metrics:
 
     def get_metrics_settings(self) -> MetricsSettingsModel:
         return self.metrics_settings
-
-    def set_filter_device_ids(self, filter_device_ids: List[int]):
-
-        # Validate that all entries are integers
-        if not all(isinstance(id, int) for id in filter_device_ids):
-            self.logger.warning(
-                "Invalid filter_device_ids: %s. All entries must be integers.",
-                filter_device_ids,
-            )
-            raise ValueError("All device IDs in filter_device_ids must be integers")
-
-        if filter_device_ids is None:
-            filter_device_ids = []
-
-        self.filter_device_ids = filter_device_ids
-        self.logger.debug("Updating filter_device_ids: %s", filter_device_ids)
 
     def start(self):
         with self.lock:  # acquire and release automatically
@@ -256,17 +239,18 @@ class Metrics:
         device_id, device_type, device_trans = device_tuple
 
         self.logger.debug(
-            "Found new device with device_id: %s, device_type: %s, device_trans:%s, filter_device_ids: %s",
+            "Found new device with device_id: %s, device_type: %s, device_trans:%s, metrics_settings: %s",
             device_id,
             device_type,
             device_trans,
-            self.filter_device_ids,
+            self.metrics_settings,
         )
-
-        if self.filter_device_ids is None or len(self.filter_device_ids) == 0:
+        filter_device_ids = self.metrics_settings.device_ids
+        if filter_device_ids is None or len(filter_device_ids) == 0:
             self._create_sensor_device(device_id, device_type, device_trans)
         else:
-            self._create_sensor_device(device_id, device_type, device_trans)
+            if device_id in filter_device_ids:
+                self._create_sensor_device(device_id, device_type, device_trans)
 
     def _create_sensor_device(self, device_id, device_type, device_trans):
         if DeviceType(device_type) in (

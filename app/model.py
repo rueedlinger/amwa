@@ -1,6 +1,6 @@
 from datetime import datetime
 from enum import Enum
-from typing import Optional
+from typing import List, Optional
 
 from pydantic import BaseModel, Field
 
@@ -91,6 +91,10 @@ class MetricsSettingsModel(BaseModel):
         None, gt=0, description="Wheel circumference in meters (distance sensor)"
     )
     age: Optional[int] = Field(None, gt=0, description="User age in years")
+
+    device_ids: Optional[List[int]] = Field(
+        None, description="Device Ids to use when set"
+    )
 
 
 class DeviceModel(BaseModel):

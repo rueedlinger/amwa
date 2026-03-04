@@ -5,36 +5,40 @@ from typing import Optional
 from pydantic import BaseModel, Field
 
 
+from enum import Enum
+from typing import Optional
+
+
 class SportZone(str, Enum):
     """Defines sport zones based on heart rate percentage of HRmax.
     https://www.polar.com/en/guide/heart-rate-zones
     """
 
     UNKNOWN = "UNKNOWN"
-    RESTING = "Resting Heart Rate"  # Heart rate at rest
-    ZONE_1 = "Very Light - Recovery"  # Gentle activity, easy breathing
-    ZONE_2 = "Light - Fat Burn"  # Comfortable pace, can carry a conversation
-    ZONE_3 = "Moderate - Cardio"  # Elevated heart rate, conversation limited
-    ZONE_4 = "Hard - Threshold"  # Challenging, conversation difficult
-    ZONE_5 = "Maximum - Peak"  # Max effort, near exhaustion
+    RESTING = "Resting Heart Rate"
+    ZONE_1 = "Very Light - Recovery"
+    ZONE_2 = "Light - Fat Burn"
+    ZONE_3 = "Moderate - Cardio"
+    ZONE_4 = "Hard - Threshold"
+    ZONE_5 = "Maximum - Peak"
 
     @staticmethod
-    def hrmax_from_age(age: int) -> float:
+    def hrmax_from_age(age: int) -> Optional[float]:
         """
         Estimate HRmax using the common formula: 220 - age
         Returns None for invalid age.
         """
         if age is None or age <= 0:
             return None
-        return 220 - age
+        return float(220 - age)
 
     @staticmethod
-    def percent_from_age(age: int, heart_rate: float) -> float:
+    def percent_from_age(age: int, heart_rate: float) -> Optional[float]:
         """
         Returns heart rate percentage of estimated HRmax.
         Returns None if inputs are invalid.
         """
-        if heart_rate is None:
+        if heart_rate is None or heart_rate <= 0:
             return None
 
         hrmax = SportZone.hrmax_from_age(age)
@@ -44,31 +48,30 @@ class SportZone(str, Enum):
         return (heart_rate / hrmax) * 100
 
     @staticmethod
-    def from_hr_percent(percent: float) -> SportZone:
+    def from_hr_percent(percent: Optional[float]) -> "SportZone":
         """
         Returns the sport zone based on percentage of HRmax.
-        :param percent: Heart rate as percentage of HRmax (0–100)
         """
         if percent is None or percent < 0:
             return SportZone.UNKNOWN
 
-        if 0 <= percent < 50:
+        if percent < 50:
             return SportZone.RESTING
-        elif 50 <= percent < 60:
+        if percent < 60:
             return SportZone.ZONE_1
-        elif 60 <= percent < 70:
+        if percent < 70:
             return SportZone.ZONE_2
-        elif 70 <= percent < 80:
+        if percent < 80:
             return SportZone.ZONE_3
-        elif 80 <= percent < 90:
+        if percent < 90:
             return SportZone.ZONE_4
-        elif 90 <= percent <= 100:
+        if percent <= 100:
             return SportZone.ZONE_5
-        else:
-            return SportZone.UNKNOWN
+
+        return SportZone.UNKNOWN
 
     @staticmethod
-    def sport_zone(age: int, heart_rate: float) -> SportZone:
+    def sport_zone(age: int, heart_rate: float) -> "SportZone":
         """
         Convenience method: calculates percentage and returns zone.
         """
@@ -78,7 +81,7 @@ class SportZone(str, Enum):
     def to_tuple(self) -> tuple[str, str]:
         """
         Returns (formatted_zone_name, zone_value)
-        Example: ("ZONE 3", "Moderate")
+        Example: ("ZONE 3", "Moderate - Cardio")
         """
         formatted_name = self.name.replace("_", " ")
         return formatted_name, self.value

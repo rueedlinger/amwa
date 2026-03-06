@@ -3,7 +3,7 @@ set -euo pipefail
 IFS=$'\n\t'
 
 # -----------------------
-# Disclaimer
+# DISCLAIMER
 # -----------------------
 echo "======================================"
 echo " AMWA Installer"
@@ -24,19 +24,24 @@ if [[ "$CONFIRM" != "yes" ]]; then
 fi
 
 # -----------------------
-# Check sudo
+# CHECK SUDO
 # -----------------------
 if [[ $EUID -ne 0 ]]; then
     echo "Error: This script must be run with sudo."
-    echo "Example:"
-    echo "sudo ./install.sh"
+    echo "Example: sudo ./install.sh"
     exit 1
 fi
 
 CURRENT_USER=${SUDO_USER:-$(whoami)}
+echo "Running commands as user: $CURRENT_USER"
+
+# Helper function to run commands as normal user
+run_as_user() {
+    sudo -u "$CURRENT_USER" bash -c "$1"
+}
 
 # -----------------------
-# Configuration
+# CONFIGURATION
 # -----------------------
 REPO_DIR="amwa"
 REPO_URL="https://github.com/rueedlinger/${REPO_DIR}"
@@ -44,21 +49,25 @@ VENV_DIR=".setup"
 FRONTEND_DIR="frontend"
 SERVICE_FILE="/etc/systemd/system/amwa.service"
 
+USER_HOME=$(eval echo "~$CURRENT_USER")
+REPO_PATH="${USER_HOME}/${REPO_DIR}"
+
 # -----------------------
-# Step 0: Clone repository
+# STEP 0: Clone repository (as user)
 # -----------------------
 echo ""
 echo "=== Step 0: Cloning repository ==="
-if [ ! -d "$REPO_DIR" ]; then
-    echo "Cloning $REPO_URL into $REPO_DIR..."
-    git clone "$REPO_URL"
+if [ ! -d "$REPO_PATH" ]; then
+    run_as_user "git clone $REPO_URL $REPO_PATH"
 else
-    echo "Repository exists. Pulling latest changes..."
-    git -C "$REPO_DIR" pull
+    run_as_user "git -C $REPO_PATH pull"
 fi
 
+# Ensure correct ownership
+chown -R "$CURRENT_USER":"$CURRENT_USER" "$REPO_PATH"
+
 # -----------------------
-# Step 1: Check dependencies
+# STEP 1: Check dependencies (user)
 # -----------------------
 echo ""
 echo "=== Step 1: Checking dependencies ==="
@@ -77,70 +86,63 @@ echo "npm version: $(npm -v)"
 echo "Git version: $(git --version)"
 
 # -----------------------
-# Step 2: Setup Python environment
+# STEP 2: Setup Python environment (user)
 # -----------------------
 echo ""
 echo "=== Step 2: Setting up Python virtual environment ==="
-if [ ! -d "$VENV_DIR" ]; then
-    echo "Creating virtual environment in $VENV_DIR..."
-    python3 -m venv "$VENV_DIR"
+run_as_user "
+cd $REPO_PATH
+if [ ! -d '$VENV_DIR' ]; then
+    python3 -m venv $VENV_DIR
 fi
-
-echo "Activating virtual environment..."
-# shellcheck disable=SC1091
-source "$VENV_DIR/bin/activate"
-
-echo "Upgrading pip..."
+source $VENV_DIR/bin/activate
 pip install --upgrade pip
-echo "pip version: $(pip --version)"
-
-echo "Installing uv..."
 pip install uv
-command -v uv >/dev/null || { echo "uv installation failed"; exit 1; }
+"
 
 # -----------------------
-# Step 3: Navigate to repository
+# STEP 3: Build backend (user)
 # -----------------------
 echo ""
-echo "=== Step 3: Entering repository directory ==="
-cd "$REPO_DIR"
-
-REPO_PATH="$(pwd)"
-
-# -----------------------
-# Step 4: Build backend
-# -----------------------
-echo ""
-echo "=== Step 4: Building backend ==="
+echo "=== Step 3: Building backend ==="
+run_as_user "
+cd $REPO_PATH
+source $VENV_DIR/bin/activate
 uv sync --all-groups
+"
 
 # -----------------------
-# Step 5: Build frontend
+# STEP 4: Build frontend (user)
 # -----------------------
 echo ""
-echo "=== Step 5: Building frontend ==="
-if [ -d "$FRONTEND_DIR" ]; then
-    npm ci --include=dev --prefix "$FRONTEND_DIR"
-    npm run build --prefix "$FRONTEND_DIR"
+echo "=== Step 4: Building frontend ==="
+if run_as_user "[ -d '$REPO_PATH/$FRONTEND_DIR' ]"; then
+    run_as_user "
+cd $REPO_PATH
+npm ci --include=dev --prefix $FRONTEND_DIR
+npm run build --prefix $FRONTEND_DIR
+"
 else
     echo "Warning: Frontend directory '$FRONTEND_DIR' does not exist."
     exit 1
 fi
 
 # -----------------------
-# Step 6: Copy frontend build
+# STEP 5: Copy frontend build into backend (user)
 # -----------------------
 echo ""
-echo "=== Step 6: Copy frontend build ==="
-
+echo "=== Step 5: Copying frontend build ==="
+run_as_user "
+cd $REPO_PATH
 mkdir -p app/dist
-cp -r "$FRONTEND_DIR/dist/." app/dist/
+cp -r $FRONTEND_DIR/dist/. app/dist/
+"
 
 # -----------------------
-# Step 7: Install systemd service
+# STEP 6: Install systemd service (root)
 # -----------------------
 echo ""
-echo "=== Step 7: Installing systemd service ==="
+echo "=== Step 6: Installing systemd service ==="
 
 SERVICE_SRC="${REPO_PATH}/scripts/amwa.service"
 
@@ -153,7 +155,6 @@ echo "Copying service file..."
 cp "$SERVICE_SRC" "$SERVICE_FILE"
 
 echo "Configuring service..."
-
 sed -i "s|ExecStart=.*|ExecStart=${REPO_PATH}/scripts/start.sh|" "$SERVICE_FILE"
 sed -i "s|WorkingDirectory=.*|WorkingDirectory=${REPO_PATH}|" "$SERVICE_FILE"
 sed -i "s|User=.*|User=${CURRENT_USER}|" "$SERVICE_FILE"
@@ -168,11 +169,10 @@ echo "Starting service..."
 systemctl start amwa
 
 # -----------------------
-# Step 8: Status
+# STEP 7: Show service status
 # -----------------------
 echo ""
-echo "=== Step 8: Service status ==="
-
+echo "=== Step 7: Service status ==="
 systemctl status amwa --no-pager
 
 echo ""

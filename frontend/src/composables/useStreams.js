@@ -4,16 +4,17 @@ import { API } from '../config.js';
 
 /* =========================================================
    STREAM SINGLETON STORE
+   Each stream is created only once per session
 ========================================================= */
 const streams = {};
 
 /* =========================================================
-   REUSABLE SSE SINGLETON
+   CREATE SSE STREAM SINGLETON
 ========================================================= */
 function createSSEStreamSingleton(key, url, onData, options = {}) {
   const { heartbeatMs = 5000, reconnectDelay = 2000 } = options;
 
-  // If stream already exists, return it
+  // If the stream already exists, reuse it
   if (streams[key]) {
     streams[key].subscribers++;
     return streams[key];
@@ -22,7 +23,7 @@ function createSSEStreamSingleton(key, url, onData, options = {}) {
   // Reactive state for this stream
   const connected = ref(false);
   const lastUpdated = ref(null);
-  const subscribers = 1; // tracks number of components using this stream
+  let subscribers = 1; // mutable counter for active components
 
   let source = null;
   let heartbeatTimeout = null;
@@ -69,7 +70,7 @@ function createSSEStreamSingleton(key, url, onData, options = {}) {
         connected.value = true;
         resetHeartbeat();
       } catch (err) {
-        console.warn('SSE parse error:', err);
+        console.warn(`SSE parse error on stream ${key}:`, err);
       }
     };
 
@@ -80,13 +81,7 @@ function createSSEStreamSingleton(key, url, onData, options = {}) {
     };
   }
 
-  // start the stream
-  connect();
-
-  // Store singleton info
-  streams[key] = { connected, lastUpdated, subscribers, cleanup };
-
-  // Cleanup function
+  // Cleanup function when a component unmounts
   function cleanup() {
     subscribers--;
     if (subscribers <= 0) {
@@ -95,6 +90,12 @@ function createSSEStreamSingleton(key, url, onData, options = {}) {
       delete streams[key];
     }
   }
+
+  // Store the singleton
+  streams[key] = { connected, lastUpdated, cleanup, subscribers };
+
+  // Start the stream immediately
+  connect();
 
   return streams[key];
 }

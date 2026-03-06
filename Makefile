@@ -87,7 +87,8 @@ run-backend:
 	@echo "Running FastAPI on http://127.0.0.1:$(BACKEND_PORT)"
 	uv run uvicorn app.api:app \
 		--reload \
-		--port $(BACKEND_PORT)
+		--port $(BACKEND_PORT) \
+		--timeout-graceful-shutdown 1 
 		
 
 run-frontend:

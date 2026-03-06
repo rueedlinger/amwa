@@ -152,6 +152,7 @@ read -r -p "Do you want to configure the ANT+ USB adapter? [yes/no]: " ANTUSB_CH
 
 if [[ "$ANTUSB_CHOICE" == "yes" ]]; then
     echo "List USB devices:"
+    echo ""
     lsusb
     echo ""
     

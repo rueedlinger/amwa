@@ -70,14 +70,27 @@ app.add_middleware(
 
 # Path to frontend build folder inside app/
 build_path = pathlib.Path(__file__).parent / "dist"
-if build_path.exists() and build_path.is_dir():
-    # Serve "assets" folder
-    app.mount("/assets", StaticFiles(directory=build_path / "assets"), name="assets")
+assets_path = build_path / "assets"
 
-    # Serve index.html at root
-    @app.get("/")
-    def root():
-        return FileResponse(build_path / "index.html")
+logger.info("looking for ui in %s", build_path)
+if build_path.exists() and build_path.is_dir():
+    if assets_path.exists() and assets_path.is_dir():
+        app.mount("/assets", StaticFiles(directory=assets_path), name="assets")
+    else:
+        logger.warning(
+            "Assets folder not found at %s, skipping assets mount.", assets_path
+        )
+
+    # Check index.html
+    index_file = build_path / "index.html"
+    if index_file.exists():
+
+        @app.get("/")
+        def root():
+            return FileResponse(index_file)
+    else:
+        logger.warning("index.html not found at %s, skipping assets mount.", index_file)
+
 else:
     logger.warning(
         "Frontend build folder not found at %s, skipping frontend mount.", build_path

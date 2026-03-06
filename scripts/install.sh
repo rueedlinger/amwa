@@ -65,6 +65,7 @@ echo "pip version: $(pip --version)"
 # Install uv
 echo "Installing uv..."
 pip install uv
+command -v uv >/dev/null || { echo "uv installation failed"; exit 1; }
 
 # -----------------------
 # Step 3: Navigate to repository
@@ -86,13 +87,21 @@ uv sync --all-groups
 echo ""
 echo "=== Step 5: Building frontend ==="
 if [ -d "$FRONTEND_DIR" ]; then
-    npm install --include=dev --prefix "$FRONTEND_DIR"
+    npm ci --include=dev --prefix "$FRONTEND_DIR"
+    npm run build --prefix "$FRONTEND_DIR"
 else
     echo "Warning: Frontend directory '$FRONTEND_DIR' does not exist. Skipping npm install."
+    exit 1
 fi
+
 
 # -----------------------
 # Step 6: Finish
 # -----------------------
+
+# Copy frontend build into backend dist folder
+mkdir -p app/dist
+cp -r "$FRONTEND_DIR/dist/." app/dist/
+
 echo ""
 echo "=== Step 6: Setup and build finished successfully! ==="

@@ -72,26 +72,31 @@
 
       <!-- Footer -->
 
-      <footer class="text-gray-600 text-center text-xs md:text-sm py-3 md:py-4 mt-6 md:mt-8">
-        <p>
-          Doc:
-          <a
-            :href="API.baseUrl + '/docs'"
-            target="_blank"
-            class="underline font-semibold hover:text-gray-800"
-          >
-            OpenAPI</a
-          >
-
-          GitHub:
-          <a
-            href="https://github.com/rueedlinger/amwa"
-            target="_blank"
-            class="underline font-semibold hover:text-gray-800"
-          >
-            amwa
-          </a>
-        </p>
+      <footer
+        class="text-xs text-gray-500 text-center text-xs md:text-sm py-3 md:py-4 mt-6 md:mt-8"
+      >
+        <div>{{ appName }} {{ appVersion }}</div>
+        <div>
+          <span>
+            <a
+              :href="API.baseUrl + '/docs'"
+              target="_blank"
+              class="underline font-semibold hover:text-gray-800"
+            >
+              OpenAPI</a
+            >
+          </span>
+          <span> - </span>
+          <span>
+            <a
+              href="https://github.com/rueedlinger/amwa"
+              target="_blank"
+              class="underline font-semibold hover:text-gray-800"
+            >
+              GitHub
+            </a>
+          </span>
+        </div>
       </footer>
     </div>
   </div>
@@ -107,6 +112,9 @@ import ControlCard from './components/ControlCard.vue';
 import WorkoutCard from './components/WorkoutCard.vue';
 import { API } from './config.js';
 import { ToastType } from './constants/toastType.js';
+
+const appVersion = __APP_VERSION__;
+const appName = __APP_NAME__;
 
 const activeTab = ref('main');
 

@@ -151,26 +151,33 @@ echo "Added $CURRENT_USER to plugdev group. Log out and back in if necessary."
 read -r -p "Do you want to configure the ANT+ USB adapter? [yes/no]: " ANTUSB_CHOICE
 
 if [[ "$ANTUSB_CHOICE" == "yes" ]]; then
-   
-
-    # Ask user for path to udev rule file
-    read -r -p "Please provide the path to your ANT+ udev rule file (e.g., antusb.rules): " ANTUSB_RULE_FILE
-
-    # Check that file exists
-    if [ ! -f "$ANTUSB_RULE_FILE" ]; then
-        echo "Error: File '$ANTUSB_RULE_FILE' does not exist. Aborting ANT+ USB setup."
-        exit 1
-    fi
-
-    # Copy the udev rule to /etc/udev/rules.d/
+    echo "List USB devices:"
+    lsusb
+    echo ""
+    
+    # Ask user to enter Vendor and Product IDs
+    read -r -p "Enter the idVendor (e.g., 0fcf): " ID_VENDOR
+    read -r -p "Enter the idProduct (e.g., 1008): " ID_PRODUCT
+    
+    echo "Using Vendor ID: $ID_VENDOR"
+    echo "Using Product ID: $ID_PRODUCT"
+    
+    # Create udev rule
     UDEV_RULE_DEST="/etc/udev/rules.d/99-antusb.rules"
-    cp "$ANTUSB_RULE_FILE" "$UDEV_RULE_DEST"
-    echo "Copied udev rule to $UDEV_RULE_DEST"
+    echo "Creating udev rule at $UDEV_RULE_DEST..."
+    cat <<EOF > "$UDEV_RULE_DEST"
+SUBSYSTEM=="usb", ATTR{idVendor}=="$ID_VENDOR", ATTR{idProduct}=="$ID_PRODUCT", GROUP="plugdev", MODE="0660"
+EOF
 
-    # Apply the new rule
+    # Apply udev rules
     udevadm control --reload-rules
     udevadm trigger
     echo "ANT+ USB udev rule applied successfully."
+    
+    # Prompt user to replug device
+    echo ""
+    echo "Please unplug and replug your ANT+ USB stick, then press Enter..."
+    read -r
 
 else
     echo "Skipping ANT+ USB adapter setup."

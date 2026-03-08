@@ -31,10 +31,10 @@
         <tbody>
           <tr class="hover:bg-gray-50 transition">
             <td class="px-2 py-1 text-left border-b border-dashed border-black/30">
-             <StatusBadge :running="metrics.is_running" />
+              <StatusBadge :running="metrics.is_running" />
             </td>
             <td class="px-2 py-1 text-left border-b border-dashed border-black/30">
-             <StatusBadge :running="workout.is_running" />
+              <StatusBadge :running="workout.is_running" />
             </td>
             <td class="px-2 py-1 border-b border-dashed border-black/30 font-semibold">
               {{ workout.interval?.name ?? '-' }} ({{ workout.interval?.seconds ?? '-' }} s)
@@ -87,7 +87,6 @@ import { ToastType } from '../constants/toastType.js';
 import { useMetricsStream, useWorkoutStream } from '../composables/singletonStreams.js';
 
 const emit = defineEmits(['show-toast']);
-
 
 /* ---------------- METRICS ---------------- */
 const { metrics } = useMetricsStream();

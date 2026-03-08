@@ -6,6 +6,6 @@
 
 <script setup>
 defineProps({
-  running: Boolean
-})
+  running: Boolean,
+});
 </script>

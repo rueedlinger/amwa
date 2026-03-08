@@ -11,7 +11,9 @@
       </thead>
       <tbody>
         <tr v-for="(value, key) in localSettings" :key="key" class="hover:bg-gray-50 transition">
-          <td class="px-2 py-1 border-b border-dashed border-black/30 text-left">{{ formatLabel(key) }}</td>
+          <td class="px-2 py-1 border-b border-dashed border-black/30 text-left">
+            {{ formatLabel(key) }}
+          </td>
           <td class="px-2 py-1 border-b border-dashed border-black/30">
             <input
               v-if="key !== 'device_ids'"
@@ -72,17 +74,15 @@ const localSettings = reactive({
 // -----------------------------
 const deviceIdsInput = computed({
   get() {
-    return Array.isArray(localSettings.device_ids)
-      ? localSettings.device_ids.join(',')
-      : '';
+    return Array.isArray(localSettings.device_ids) ? localSettings.device_ids.join(',') : '';
   },
   set(value) {
     const cleaned = value
       .split(',')
-      .map(v => v.trim())
-      .filter(v => v !== '')   // remove empty values first
-      .map(v => Number(v))
-      .filter(v => !isNaN(v));
+      .map((v) => v.trim())
+      .filter((v) => v !== '') // remove empty values first
+      .map((v) => Number(v))
+      .filter((v) => !isNaN(v));
 
     localSettings.device_ids = cleaned.length ? cleaned : null;
   },
@@ -92,7 +92,7 @@ const deviceIdsInput = computed({
 // Helper to format label
 // -----------------------------
 function formatLabel(key) {
-  return key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+  return key.replace(/_/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase());
 }
 
 // -----------------------------
@@ -156,7 +156,11 @@ async function submitSettings() {
     });
   } catch (err) {
     emit('show-toast', {
-      message: err.response?.data?.detail || err.response?.data?.message || err.message || 'Failed to update settings',
+      message:
+        err.response?.data?.detail ||
+        err.response?.data?.message ||
+        err.message ||
+        'Failed to update settings',
       title: 'Error',
       type: ToastType.ERROR,
     });
@@ -173,7 +177,9 @@ function handleStorageChange(event) {
     try {
       const data = JSON.parse(event.newValue);
       updateLocalSettings(data);
-    } catch {}
+    } catch (e) {
+      console.error('Failed to parse shared settings:', e);
+    }
   }
 }
 
@@ -187,7 +193,9 @@ onMounted(() => {
     try {
       const data = JSON.parse(cached);
       updateLocalSettings(data);
-    } catch {}
+    } catch (e) {
+      console.error('Failed to parse shared settings:', e);
+    }
   }
 
   // Fetch fresh settings from API

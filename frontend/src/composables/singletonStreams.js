@@ -208,7 +208,6 @@ function initWorkoutStream() {
           } else {
             playBeep(0.1);
           }
-
         }
       } else {
         lastBeepSecond = null; // reset

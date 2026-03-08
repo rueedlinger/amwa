@@ -31,14 +31,10 @@
         <tbody>
           <tr class="hover:bg-gray-50 transition">
             <td class="px-2 py-1 text-left border-b border-dashed border-black/30">
-              <span :class="metrics.is_running ? 'text-blue-500 font-semibold' : 'text-pink-500 font-semibold'">
-                {{ metrics.is_running ? 'Running' : 'Stopped' }}
-              </span>
+             <StatusBadge :running="metrics.is_running" />
             </td>
             <td class="px-2 py-1 text-left border-b border-dashed border-black/30">
-              <span :class="workout.is_running ? 'text-blue-500 font-semibold' : 'text-pink-500 font-semibold'">
-                {{ workout.is_running ? 'Running' : 'Stopped' }}
-              </span>
+             <StatusBadge :running="workout.is_running" />
             </td>
             <td class="px-2 py-1 border-b border-dashed border-black/30 font-semibold">
               {{ workout.interval?.name ?? '-' }} ({{ workout.interval?.seconds ?? '-' }} s)
@@ -62,51 +58,36 @@
 
     <!-- ================= BUTTONS ================= -->
     <div class="flex justify-center gap-4 flex-wrap">
-      <!-- Metrics Toggle -->
-      <button
-        :disabled="loadingMetrics"
+      <ToggleActionButton
+        :running="metrics.is_running"
+        :loading="loadingMetrics"
+        startText="Start Sensor Scanning"
+        stopText="Stop Sensor Scanning"
         @click="toggleMetrics"
-        :class="[
-          baseBtnClass,
-          metrics.is_running
-            ? 'bg-gradient-to-r from-red-500 to-pink-500'
-            : 'bg-gradient-to-r from-purple-500 to-blue-400',
-        ]"
-      >
-        <div v-if="loadingMetrics" class="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-        <span>{{ metrics.is_running ? 'Stop' : 'Start' }} Sensor Scanning...</span>
-      </button>
+      />
 
-      <!-- Workout Toggle -->
-      <button
-        :disabled="loadingWorkout"
+      <ToggleActionButton
+        :running="workout.is_running"
+        :loading="loadingWorkout"
+        startText="Start Workout"
+        stopText="Stop Workout"
         @click="toggleWorkout"
-        :class="[
-          baseBtnClass,
-          workout.is_running
-            ? 'bg-gradient-to-r from-red-500 to-pink-500'
-            : 'bg-gradient-to-r from-purple-500 to-blue-400',
-        ]"
-      >
-        <div v-if="loadingWorkout" class="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-        <span>{{ workout.is_running ? 'Stop' : 'Start' }} Workout</span>
-      </button>
+      />
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, computed, watch, onMounted } from 'vue';
+import { ref } from 'vue';
 import axios from 'axios';
+import ToggleActionButton from './ToggleActionButton.vue';
+import StatusBadge from './StatusBadge.vue';
 import { API } from '../config.js';
 import { ToastType } from '../constants/toastType.js';
 import { useMetricsStream, useWorkoutStream } from '../composables/singletonStreams.js';
 
 const emit = defineEmits(['show-toast']);
 
-/* ---------------- COMMON BUTTON STYLE ---------------- */
-const baseBtnClass =
-  'px-6 py-3 rounded-2xl font-semibold text-white shadow-lg hover:shadow-xl disabled:opacity-50 flex items-center justify-center space-x-2 transition-all duration-300';
 
 /* ---------------- METRICS ---------------- */
 const { metrics } = useMetricsStream();
@@ -177,6 +158,6 @@ function formatTime(value) {
   const h = Math.floor(totalSeconds / 3600);
   const m = Math.floor((totalSeconds % 3600) / 60);
   const s = totalSeconds % 60;
-  return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+  return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
 }
 </script>
